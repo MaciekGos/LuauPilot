@@ -1,4 +1,4 @@
-# LuaPilot Project Style Guide
+# LuauPilot Project Style Guide
 
 This guide keeps everything you build in this place consistent: same look, same structure, same feel. Read it at the start of a session. When you are unsure about a visual, audio or structural choice, ask for it again with the command style_guide (optionally with a section name). The user may edit this file; what is written under "Approved list" overrides everything else.
 

@@ -1,6 +1,6 @@
 # Provider contract
 
-A provider adapts an AI chat site to the LuaPilot core (today only DeepSeek ships). The core never touches the
+A provider adapts an AI chat site to the LuauPilot core (today only DeepSeek ships). The core never touches the
 site's DOM; it only calls the object a provider assigns to `LP.provider`.
 
 Each provider file is a content script (see `manifest.json`). Load order inside one
@@ -18,7 +18,7 @@ attributes / `CustomEvent`s on `document`.
 ## Naming rules
 
 * Global: `LP`. DOM attributes we set: `data-lp-*`. CSS classes: `lp-*`.
-* Anything LuaPilot injects into the page carries `data-lp-own`; `LP.kit.readText` skips it.
+* Anything LuauPilot injects into the page carries `data-lp-own`; `LP.kit.readText` skips it.
 * Hidden elements get the class `lp-hide` (the core stylesheet makes it `display:none!important`).
 
 ## Shape
@@ -55,7 +55,7 @@ LP.provider = {
                       //   press send. Resolve true when the site accepted it (composer cleared
                       //   or a new user turn appeared), false otherwise. Must not throw.
   lockInput(on),      // optional: make the composer read-only for the user while the agent works
-  barSlot(),          // -> {parent, before} | null  where the LuaPilot bar is inserted
+  barSlot(),          // -> {parent, before} | null  where the LuauPilot bar is inserted
                       //   (parent.insertBefore(bar, before)); null = the core floats it above the editor
 
   // ---- optional ----

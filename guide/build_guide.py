@@ -145,7 +145,7 @@ def pdf():
     body = ParagraphStyle("b", parent=ss["BodyText"], fontSize=10, leading=14)
     bullet = ParagraphStyle("bl", parent=body, leftIndent=12, bulletIndent=0)
     text = open(os.path.join(HERE, "STYLE_GUIDE.md"), encoding="utf-8").read()
-    story = [Paragraph("LuaPilot Style Guide", h1), Spacer(1, 6)]
+    story = [Paragraph("LuauPilot Style Guide", h1), Spacer(1, 6)]
     titles = {"rules": "Core rules", "structure": "Structure and naming", "colors": "Colours and lighting", "ui": "User interface",
               "assets": "Assets", "sounds": "Sounds", "images": "Reference pictures", "approved": "Approved list"}
     esc = lambda s: s.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
@@ -164,7 +164,7 @@ def pdf():
         elif line.strip():
             story.append(Paragraph(esc(line), body))
     SimpleDocTemplate(os.path.join(HERE, "LuaPilot-Style-Guide.pdf"), pagesize=A4, leftMargin=18 * mm, rightMargin=18 * mm,
-                      topMargin=16 * mm, bottomMargin=16 * mm, title="LuaPilot Style Guide", author="LuaPilot").build(story)
+                      topMargin=16 * mm, bottomMargin=16 * mm, title="LuauPilot Style Guide", author="LuauPilot").build(story)
 
 
 if __name__ == "__main__":

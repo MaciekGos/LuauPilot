@@ -1,4 +1,4 @@
-// LuaPilot - storage, settings and the line to the background worker (and so to the bridge).
+// LuauPilot - storage, settings and the line to the background worker (and so to the bridge).
 (() => {
   "use strict";
   const LP = (window.LP = window.LP || {});
@@ -22,13 +22,14 @@
     },
   };
 
-  LP.settings = { custom: "", shot: "show" };
+  LP.settings = { custom: "", shot: "show", awake: true };
   LP.loadSettings = async () => {
-    const v = await LP.store.get(["lpCustom", "lpShot"]);
+    const v = await LP.store.get(["lpCustom", "lpShot", "lpAwake"]);
+    LP.settings.awake = v.lpAwake !== false;
     LP.settings.custom = typeof v.lpCustom === "string" ? v.lpCustom : "";
     LP.settings.shot = v.lpShot === "hide" ? "hide" : "show";
   };
-  LP.saveSettings = () => LP.store.set({ lpCustom: LP.settings.custom, lpShot: LP.settings.shot });
+  LP.saveSettings = () => LP.store.set({ lpCustom: LP.settings.custom, lpShot: LP.settings.shot, lpAwake: LP.settings.awake });
 
   function send(msg, timeoutMs = 130000) {
     return new Promise((resolve) => {
@@ -63,7 +64,7 @@
       if (r.timeout || r.lost) return { ok: false, kind: "offline", error: "no answer from the background worker" };
       return r;
     },
-    async tools() { const r = await send({ t: "tools" }, 30000); return Array.isArray(r.tools) ? r.tools : []; },
+    async tools(force) { const r = await send({ t: "tools", force: !!force }, 30000); return Array.isArray(r.tools) ? r.tools : []; },
     status() { return send({ t: "status" }, 5000); },
     // optional Blender connection: action = status | enable | disable
     async blender(action) {
@@ -80,6 +81,14 @@
     onPulse(cb) {
       if (!alive()) return;
       try { chrome.runtime.onMessage.addListener((m) => { if (m && m.t === "pulse") cb(); }); } catch { /* ignore */ }
+    },
+    feedback: {
+      get: async () => { const r = await send({ t: "feedback_get" }, 5000); return { open: !!r.open, url: r.url || "" }; },
+      answer: (action) => send({ t: "feedback_answer", action }, 10000),
+      onChange(cb) {
+        if (!alive()) return;
+        try { chrome.runtime.onMessage.addListener((m) => { if (m && m.t === "feedback") cb(m); }); } catch { /* ignore */ }
+      },
     },
     onState(cb) {
       if (!alive()) return;

@@ -1,4 +1,4 @@
-// LuaPilot: DeepSeek "<ds_safety>" notices.
+// LuauPilot: DeepSeek "<ds_safety>" notices.
 //
 // DeepSeek sometimes wraps a warning in <ds_safety>...</ds_safety>. The site shows the tags
 // as plain text; this script turns them into a framed amber "Safety notice" box, also while

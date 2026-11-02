@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""LuaPilot bridge.
+"""LuauPilot bridge.
 
 Local WebSocket server (ws://127.0.0.1:<port>) that sits between the browser
 extension and Roblox's StudioMCP server, started as a child process over stdio.
@@ -25,6 +25,7 @@ import time
 import blender
 import catalog
 import feedback
+import record
 import guide
 import models
 import retention
@@ -46,7 +47,7 @@ try:
 except Exception:
     pass
 
-VERSION = "Alpha 0.02"
+VERSION = "Alpha 0.03"
 HOST = "127.0.0.1"
 PORT = int(os.environ.get("LP_BRIDGE_PORT", "17613"))
 HERE = os.path.dirname(os.path.abspath(__file__))
@@ -121,7 +122,7 @@ STUDIO_STEPS = [
 ]
 
 
-# Roblox Studio is the only server LuaPilot talks to.
+# Roblox Studio is the only server LuauPilot talks to.
 SERVER_SPEC = {PRIMARY: {"command": "launch_studio_mcp.py", "args": []}}
 
 
@@ -458,7 +459,7 @@ class Hub:
 
     def listing(self):
         with self._lock:
-            return [dict(t, server="luapilot") for t in catalog.TOOLS + guide.TOOLS + models.TOOLS] + [dict(srv_tool(srv, tool), name=key) for key, (srv, real) in self.index.items()
+            return [dict(t, server="luapilot") for t in catalog.TOOLS + guide.TOOLS + models.TOOLS + record.TOOLS] + [dict(srv_tool(srv, tool), name=key) for key, (srv, real) in self.index.items()
                     for tool in srv.tools if tool.get("name") == real]
 
     def call(self, name, args, timeout):
@@ -468,6 +469,8 @@ class Hub:
             return guide.call(name, args, timeout)
         if name in models.NAMES:
             return models.call(name, args, timeout)
+        if name in record.NAMES:
+            return record.call(name, args, timeout)
         with self._lock:
             entry = self.index.get(name)
         if entry is None:
@@ -708,7 +711,7 @@ def _origin(ws):
 
 
 async def handler(ws):
-    # Only the LuaPilot extension (or a local tool without an Origin) may talk to us. A web page
+    # Only the LuauPilot extension (or a local tool without an Origin) may talk to us. A web page
     # you happen to visit always sends its own Origin, so it is turned away here.
     origin = _origin(ws)
     if origin and not origin.startswith("chrome-extension://"):
@@ -820,7 +823,7 @@ def blender_control(action):
     return dict(st, on=True, tools=len(srv.tools))
 
 
-RENAME_NOTE = ("Note: LuaPilot will be renamed soon (LuaPilot.com already exists). The current name is temporary; "
+RENAME_NOTE = ("Note: LuaPilot is now LuauPilot (LuaPilot.com already exists and offers a very similar product). "
                "the project is not discontinued.")
 TOOLS_AT = [0.0]
 
@@ -988,7 +991,7 @@ async def main():
     asyncio.create_task(_tidy_loop())
     models.LOG = lambda m: log(m, "green")
     log("Studio plugin link: " + (f"listening on 127.0.0.1:{models.PLUGIN_PORT}" if models.start_plugin_server() else f"port {models.PLUGIN_PORT} is busy, plugin import unavailable"), "cyan")
-    print(f"\n  {_paint(f'LuaPilot bridge {VERSION}', 'cyan')}  ws://{HOST}:{PORT}")
+    print(f"\n  {_paint(f'LuauPilot bridge {VERSION}', 'cyan')}  ws://{HOST}:{PORT}")
     print(f"  {_paint(RENAME_NOTE, 'dim')}\n")
     log(f"=== start {VERSION} pid={os.getpid()} ===", "cyan", quiet=True)
     await asyncio.to_thread(clean_orphaned_proxy)

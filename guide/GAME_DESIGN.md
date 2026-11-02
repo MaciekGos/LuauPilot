@@ -1,8 +1,8 @@
-# LuaPilot — Game Design & Visual Style Guide
+# LuauPilot — Game Design & Visual Style Guide
 
 ## 1. PURPOSE
 
-This document defines how LuaPilot should design, build, modify, and evaluate Roblox games.
+This document defines how LuauPilot should design, build, modify, and evaluate Roblox games.
 
 Treat this document as a persistent source of truth for:
 
@@ -1844,7 +1844,7 @@ Reason:
 
 # 67. PROJECT MEMORY — MEMORY.md
 
-LuaPilot should maintain a project-level file named:
+LuauPilot should maintain a project-level file named:
 
 `MEMORY.md`
 
@@ -2056,7 +2056,7 @@ Reason:
 
 Too realistic and detailed compared with the existing stylized environment.
 
-This prevents LuaPilot from rediscovering the same asset later and making the same mistake.
+This prevents LuauPilot from rediscovering the same asset later and making the same mistake.
 
 ---
 

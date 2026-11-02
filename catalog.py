@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: MIT
-"""Roblox catalog tools for LuaPilot (search the Creator Store, look at thumbnails).
+"""Roblox catalog tools for LuauPilot (search the Creator Store, look at thumbnails).
 
 These two commands are answered by the bridge itself, not by Roblox Studio, so the AI can
 browse assets and see their pictures before it decides what to insert:

@@ -1,4 +1,4 @@
-// LuaPilot - background worker. Owns the WebSocket to the local bridge.
+// LuauPilot - background worker. Owns the WebSocket to the local bridge.
 "use strict";
 
 const BRIDGE_PORT_DEFAULT = 17613;
@@ -7,7 +7,7 @@ const PING_MS = 20000;
 const st = {
   ws: null, connected: false, linkOn: true, power: true, hold: false, holdTimer: 0,
   port: BRIDGE_PORT_DEFAULT, info: { mcp: false, studio: { app: false, place: false } },
-  tools: [], seq: 0, pending: new Map(), retry: 0, retryTimer: 0, pingTimer: 0, booted: null,
+  feedback: { open: false, url: "" }, tools: [], seq: 0, pending: new Map(), retry: 0, retryTimer: 0, pingTimer: 0, booted: null,
 };
 
 const store = {
@@ -29,6 +29,12 @@ function broadcast() {
   const on = st.power && st.linkOn && st.connected;
   chrome.action.setBadgeText({ text: !st.power ? "" : on ? "" : "!" }).catch(() => {});
   chrome.action.setBadgeBackgroundColor({ color: "#f59e0b" }).catch(() => {});
+}
+
+// The one-time "did everything work?" question (see feedback.py in the bridge): same answer everywhere.
+function broadcastFeedback() {
+  const m = Object.assign({ t: "feedback" }, st.feedback);
+  chrome.tabs.query({ url: "https://chat.deepseek.com/*" }, (tabs) => (tabs || []).forEach((t) => { if (t.id != null) chrome.tabs.sendMessage(t.id, m).catch(() => {}); }));
 }
 
 function failAll(kind, error) {
@@ -74,6 +80,7 @@ function connect() {
     let m; try { m = JSON.parse(ev.data); } catch { return; }
     if (m.ev === "state") { st.info = m; broadcast(); return; }
     if (m.ev === "chat") { routeChat(m); return; }
+    if (m.ev === "feedback") { st.feedback = { open: !!m.open, url: m.url || "" }; broadcastFeedback(); return; }
     if (m.re != null) {
       const p = st.pending.get(m.re);
       if (p) { clearTimeout(p.timer); st.pending.delete(m.re); p.resolve(m); }
@@ -143,12 +150,12 @@ chrome.runtime.onMessage.addListener((m, _s, reply) => {
       case "sleep": { setTimeout(() => reply({}), Math.min(Number(m.ms) || 0, 60000)); return; }
       case "tools": {
         if (!st.connected) return reply({ tools: [] });
-        const r = await rpc({ op: "tools" }, 30000);
+        const r = await rpc({ op: "tools", force: !!m.force }, 30000);
         if (r.tools) { st.tools = r.tools; st.info = r; }
         return reply({ tools: st.tools });
       }
       case "call": {
-        if (!st.power) return reply({ ok: false, kind: "offline", error: "LuaPilot is switched off" });
+        if (!st.power) return reply({ ok: false, kind: "offline", error: "LuauPilot is switched off" });
         if (!st.linkOn || !st.connected) return reply({ ok: false, kind: "offline", error: "bridge not connected" });
         const t = Number(m.timeout) || 120000;
         const r = await rpc({ op: "call", name: m.name, args: m.args || {}, timeout_ms: t }, t + 5000);
@@ -170,6 +177,16 @@ chrome.runtime.onMessage.addListener((m, _s, reply) => {
         if (r && r.ok) st.info = Object.assign({}, st.info, { blender: !!r.on });
         broadcast();
         return reply(r || { ok: false, error: "no answer" });
+      }
+      case "feedback_get": return reply(st.feedback);
+      case "feedback_answer": {
+        if (!st.connected) return reply({ ok: false });
+        st.feedback = Object.assign({}, st.feedback, { open: false });
+        return reply(await rpc({ op: "feedback", action: String(m.action || "") }, 8000));
+      }
+      case "awake": {      // the chat tab keeps itself awake while a session runs: Chrome must not discard it
+        try { if (_s && _s.tab && _s.tab.id != null) await chrome.tabs.update(_s.tab.id, { autoDiscardable: !m.on }); } catch { /* ignore */ }
+        return reply({});
       }
       case "restart-bridge": return reply(await rpc({ op: "restart" }, 60000));
       default: return reply({});

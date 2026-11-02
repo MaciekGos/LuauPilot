@@ -1,4 +1,4 @@
-// LuaPilot - everything the user sees on the chat page: the bar, menu, banners,
+// LuauPilot - everything the user sees on the chat page: the bar, menu, banners,
 // toasts, the screenshot preview and the "camouflage" that turns protocol turns into chips.
 (() => {
   "use strict";
@@ -66,12 +66,12 @@
     p.dot = h("span", { class: "lp-dot" });
     p.label = h("span", { class: "lp-label" }, "Ready");
     p.retry = h("button", { class: "lp-btn", type: "button", hidden: true, onclick: () => LP.agent.retry() }, svg("arrow-counter-clockwise"), " Retry");
-    p.stop = h("button", { class: "lp-btn lp-stop", type: "button", hidden: true, title: "Stop LuaPilot", onclick: () => LP.agent.stop() }, svg("stop"), " Stop");
-    p.gear = h("button", { class: "lp-icon-btn", type: "button", title: "LuaPilot settings", "aria-label": "Settings", onclick: (e) => { e.stopPropagation(); toggleMenu(); } });
+    p.stop = h("button", { class: "lp-btn lp-stop", type: "button", hidden: true, title: "Stop LuauPilot", onclick: () => LP.agent.stop() }, svg("stop"), " Stop");
+    p.gear = h("button", { class: "lp-icon-btn", type: "button", title: "LuauPilot settings", "aria-label": "Settings", onclick: (e) => { e.stopPropagation(); toggleMenu(); } });
     p.gear.append(svg("gear-six"));
     p.root = h("div", { class: "lp-bar", "data-state": "idle" },
       h("img", { class: "lp-logo", src: asset("icons/logo-mark.png"), alt: "" }),
-      h("span", { class: "lp-name" }, "LuaPilot"),
+      h("span", { class: "lp-name" }, "LuauPilot"),
       p.dot, p.label, h("span", { class: "lp-grow" }), p.stop, p.retry, p.gear);
     U.bar = p.root;
   }
@@ -93,7 +93,7 @@
 
   // ── menu ────────────────────────────────────────────────────────────────
   function buildMenu() {
-    const custom = h("textarea", { class: "lp-text", rows: "5", placeholder: "Extra instructions for the model (optional). They are added after LuaPilot's own rules.", spellcheck: "false" });
+    const custom = h("textarea", { class: "lp-text", rows: "5", placeholder: "Extra instructions for the model (optional). They are added after LuauPilot's own rules.", spellcheck: "false" });
     custom.value = LP.settings.custom || "";
     let t = 0;
     custom.addEventListener("input", () => { clearTimeout(t); t = setTimeout(() => { LP.settings.custom = custom.value; LP.saveSettings(); }, 400); });
@@ -106,16 +106,23 @@
     const paintSeg = () => segs.querySelectorAll("button").forEach((b) => b.classList.toggle("on", b.dataset.v === LP.settings.shot));
     paintSeg();
 
+    const awakeSeg = (val, text) => h("button", { type: "button", class: "lp-seg-b", "data-v": val, onclick: () => { LP.settings.awake = val === "on"; LP.saveSettings(); paintAwake(); } }, text);
+    const awakeSegs = h("div", { class: "lp-seg" }, awakeSeg("on", "On"), awakeSeg("off", "Off"));
+    const paintAwake = () => awakeSegs.querySelectorAll("button").forEach((b) => b.classList.toggle("on", (b.dataset.v === "on") === (LP.settings.awake !== false)));
+    paintAwake();
+
     U.parts.bridgeLine = h("div", { class: "lp-line" });
     U.menu = h("div", { class: "lp-menu", hidden: true },
-      h("div", { class: "lp-menu-h" }, h("img", { src: asset("icons/logo-mark.png"), alt: "" }), h("b", {}, "LuaPilot"), h("span", { class: "lp-ver" }, "v" + (chrome.runtime.getManifest ? chrome.runtime.getManifest().version : ""))),
+      h("div", { class: "lp-menu-h" }, h("img", { src: asset("icons/logo-mark.png"), alt: "" }), h("b", {}, "LuauPilot"), h("span", { class: "lp-ver" }, (chrome.runtime.getManifest ? (chrome.runtime.getManifest().version_name || "v" + chrome.runtime.getManifest().version) : ""))),
       U.parts.bridgeLine,
       h("div", { class: "lp-row" }, h("div", {}, h("b", {}, "Screenshot preview"), h("small", {}, "Small picture on the left after screen_capture. Click it to enlarge.")), segs),
+      h("div", { class: "lp-row" }, h("div", {}, h("b", {}, "Keep this tab awake"), h("small", {}, "While a session runs, the tab plays an inaudible sound and holds a lock so the browser does not slow it down or put it to sleep when you switch tabs. The tab may show a speaker icon.")), awakeSegs),
       h("label", { class: "lp-lab" }, "Custom instructions"), custom,
       h("details", { class: "lp-diag" }, h("summary", {}, "Diagnostics"),
         (U.parts.diag = h("pre", { class: "lp-diag-pre" })),
         h("button", { class: "lp-btn", type: "button", onclick: () => { try { navigator.clipboard.writeText(U.parts.diag.textContent); toast("Copied", "info"); } catch { /* ignore */ } } }, "Copy")),
-      h("div", { class: "lp-foot" }, "Not affiliated with DeepSeek, Roblox or any AI provider. Use at your own risk."));
+      h("div", { class: "lp-foot" }, "Not affiliated with DeepSeek, Roblox or any AI provider. Use at your own risk."),
+      h("div", { class: "lp-foot lp-rename" }, h("b", {}, "Note: LuaPilot is now LuauPilot. "), "The project was renamed because LuaPilot.com already exists and provides a very similar product. The repository, application and branding are being updated to the new name, so the GitHub repository and some file names still say LuaPilot for now. The project itself is not discontinued."));
     U.menu.addEventListener("click", (e) => e.stopPropagation());
     document.addEventListener("click", () => { if (U.menu) U.menu.hidden = true; });
     document.body.append(U.menu);
@@ -137,7 +144,7 @@
     const b = U.bridge;
     const studio = b.studio && b.studio.place ? "Studio place open" : b.studio && b.studio.app ? "Studio open, no place" : "Studio not found";
     l.dataset.ok = b.connected && b.mcp ? "1" : "0";
-    l.textContent = b.connected ? `Bridge connected · ${studio}` : "Bridge offline - start the LuaPilot app";
+    l.textContent = b.connected ? `Bridge connected · ${studio}` : "Bridge offline - start the LuauPilot app";
   }
 
   // ── toasts and banners ──────────────────────────────────────────────────
@@ -183,11 +190,11 @@
   // ── "Use Blender in this session?" ──────────────────────────────────────
   const OS_WIN = /Win/i.test(navigator.platform || "");
   const SETUP = {
-    no_bridge: { title: "The LuaPilot app is not running", steps: ["Start the LuaPilot desktop app (or start.bat) and wait until it says it is connected.", "Then press Try again."] },
+    no_bridge: { title: "The LuauPilot app is not running", steps: ["Start the LuauPilot desktop app (or start.bat) and wait until it says it is connected.", "Then press Try again."] },
     no_uv: { title: "The tool \"uv\" is missing", steps: [
       "Install uv (a small tool that runs the Blender link). In a terminal:",
       { code: OS_WIN ? 'powershell -ExecutionPolicy ByPass -c "irm https://astral.sh/uv/install.ps1 | iex"' : "curl -LsSf https://astral.sh/uv/install.sh | sh" },
-      "Close and reopen the LuaPilot app so it finds uv, then press Try again."] },
+      "Close and reopen the LuauPilot app so it finds uv, then press Try again."] },
     no_addon: { title: "Blender is not answering yet", steps: [
       "Install the Blender add-on once. In a terminal run:",
       { code: "uvx mcp-for-blender install-addon" },
@@ -229,7 +236,7 @@
       };
       const question = () => {
         box.replaceChildren(
-          h("h3", {}, svg("rocket-launch"), "Start LuaPilot - this session"),
+          h("h3", {}, svg("rocket-launch"), "Start LuauPilot - this session"),
           toggle("catalog", "storefront", "Allow the Roblox catalog?", "The AI may search free Creator Store assets, look at their thumbnails and insert the best ones."),
           toggle("blender", "shapes", "Use Blender?", "For detailed 3D models instead of plain Parts. Models are exported to a temp folder and imported into Studio, with textures. Needs Blender with the add-on."),
           h("div", { class: "lp-ask-row" },
@@ -278,11 +285,11 @@
         const ok = await LP.agent.startSession(task, opts);
         go.disabled = false;
         if (!ok) toast("Could not start. Try again.", "error");
-      } }, svg("rocket-launch"), " Start LuaPilot here");
+      } }, svg("rocket-launch"), " Start LuauPilot here");
       U.card = h("div", { class: "lp-card" },
         h("img", { src: asset("icons/logo-mark.png"), alt: "" }),
         h("div", {}, h("b", {}, "Let the AI work in your Roblox Studio"),
-          h("small", {}, "Type your task below (optional), then start. LuaPilot sends the instructions and runs the commands for you.")),
+          h("small", {}, "Type your task below (optional), then start. LuauPilot sends the instructions and runs the commands for you.")),
         go);
       document.body.append(U.card);
     }
@@ -347,9 +354,9 @@
   function chip(key, info) { U.calls.set(key, Object.assign(U.calls.get(key) || {}, info)); sweepSoon(); }
 
   function makeChip(kind, label, state, detail) {
-    const cat = kind === "sys" ? "sys" : /^catalog_/.test(label) ? "catalog" : (label === "style_guide" || label === "reference_images") ? "guide" : /^(blender_|models_)/.test(label) ? "blender" : C.toolCategory(label);
+    const cat = kind === "sys" ? "sys" : /^catalog_/.test(label) ? "catalog" : (label === "style_guide" || label === "reference_images" || label === "game_workspace") ? "guide" : /^(blender_|models_)/.test(label) ? "blender" : C.toolCategory(label);
     const head = h("button", { class: "lp-chip-h", type: "button" }, svg(ICON[cat] || ICON.tool),
-      h("span", { class: "lp-chip-t" }, label || "LuaPilot"), h("span", { class: "lp-chip-s" }), h("span", { class: "lp-chev" }));
+      h("span", { class: "lp-chip-t" }, label || "LuauPilot"), h("span", { class: "lp-chip-s" }), h("span", { class: "lp-chev" }));
     const body = h("pre", { class: "lp-chip-b", hidden: true });
     const el = h("div", { class: "lp-chip", "data-chip": "", "data-state": state, "data-kind": kind, "data-cat": cat }, head, body);
     head.addEventListener("click", () => { body.hidden = !body.hidden; el.classList.toggle("open", !body.hidden); if (!body.hidden) body.textContent = el._detail || ""; });
@@ -382,7 +389,7 @@
     if (!k) return;
     const body = P.body(t.el);
     if (!body) return;
-    const label = k.kind === "sys" ? `LuaPilot · ${k.label}` : k.label ? `${k.label}` : "LuaPilot";
+    const label = k.kind === "sys" ? `LuauPilot · ${k.label}` : k.label ? `${k.label}` : "LuauPilot";
     const state = k.kind === "sys" ? "sys" : k.kind;
     const detail = raw.replace(/^⟦LP[^⟧]*⟧[^\n]*\n?/, "").slice(0, 20000);
     let el = t.el.querySelector(":scope [data-chip]") || t.el.querySelector("[data-chip]");
@@ -392,7 +399,7 @@
     }
     paintChip(el, k.kind, label, state, detail);
     body.classList.add("lp-hide");
-    // LuaPilot's own messages (results, errors, screenshots, instructions) are not part of the conversation
+    // LuauPilot's own messages (results, errors, screenshots, instructions) are not part of the conversation
     // the user reads; the call chip on the assistant turn shows what happened.
     t.el.classList.add("lp-hide");
   }
@@ -409,12 +416,12 @@
     }
   }
 
-  // the "[LuaPilot]" first line the model writes before a command is for the extension, not for the reader
+  // the "[LuauPilot]" first line (the old "[LuaPilot]" is accepted too) the model writes before a command is for the extension, not for the reader
   function hideTag(root) {
     if (!root) return;
     for (const el of root.querySelectorAll("p, div, span, li, h1, h2, h3")) {
       if (el.children.length > 1 || el.classList.contains("lp-hide")) continue;
-      if ((el.textContent || "").trim() === "[LuaPilot]") { el.classList.add("lp-hide"); return; }
+      if (/^\[Luau?Pilot\]$/.test((el.textContent || "").trim())) { el.classList.add("lp-hide"); return; }
     }
   }
 
@@ -447,13 +454,67 @@
     if (!busy || U.coverDismissed || !ed) { if (U.cover) U.cover.classList.remove("in"); return; }
     if (!U.cover) {
       U.cover = h("div", { class: "lp-cover", title: "Press Stop to type" },
-        h("span", { class: "lp-spin" }), h("span", {}, "LuaPilot is working - press Stop to write"));
+        h("span", { class: "lp-spin" }), h("span", {}, "LuauPilot is working - press Stop to write"));
       document.body.append(U.cover);
     }
     try { if (ed.contains(document.activeElement) || ed === document.activeElement) document.activeElement.blur(); } catch { /* ignore */ }
     const r = ed.getBoundingClientRect();
     Object.assign(U.cover.style, { left: r.left + "px", top: r.top + "px", width: r.width + "px", height: r.height + "px" });
     U.cover.classList.add("in");
+  }
+
+  // ── one-time feedback question ──────────────────────────────────────────
+  // After ~1 h of real use (counted by the bridge). A small card in the corner, never a modal: it only shows
+  // while LuauPilot is idle and the tab is visible, "Later" / the cross hide it, and any answer (here, in the
+  // desktop app or in a Windows notification) ends it everywhere.
+  const FB_URL = "https://github.com/MaciekGos/LuaPilot/issues";
+  const FB_TEXT = {
+    ask: { title: "One quick question", body: "You have been using LuauPilot for about an hour. Did you run into any problems, or was your DeepSeek account blocked?" },
+    ok: { title: "Great, thank you!", body: "Please share your opinion with us on GitHub Issues. Knowing that everything works is just as useful to us as hearing about problems - we need this information even when all is fine." },
+    problem: { title: "We are sorry about that", body: "Please write exactly what happened (and whether DeepSeek blocked your account) on GitHub Issues. Knowing whether everything is OK is very important to us, even when it is." },
+  };
+  const FB = { open: false, url: FB_URL, step: "ask", el: null };
+
+  function fbAnswer(action, step) {
+    if (step) FB.step = step;
+    FB.open = false;
+    try { LP.link.feedback.answer(action); } catch { /* ignore */ }
+    fbPaint();
+  }
+
+  function fbBuild() {
+    const t = FB_TEXT[FB.step];
+    const ghLink = h("a", { class: "lp-btn lp-primary", href: FB.url || FB_URL, target: "_blank", rel: "noopener noreferrer" }, "Open GitHub Issues");
+    const row = FB.step === "ask"
+      ? h("div", { class: "lp-fb-row" },
+        h("button", { class: "lp-btn", type: "button", onclick: () => fbAnswer("ok", "ok") }, "No, all good"),
+        h("button", { class: "lp-btn", type: "button", onclick: () => fbAnswer("problem", "problem") }, "Yes, I had a problem"),
+        h("button", { class: "lp-btn lp-fb-later", type: "button", onclick: () => fbAnswer("later") }, "Later"))
+      : h("div", { class: "lp-fb-row" }, ghLink,
+        h("button", { class: "lp-btn lp-fb-later", type: "button", onclick: () => { FB.step = "ask"; FB.done = true; fbPaint(); } }, "Close"));
+    const x = h("button", { class: "lp-x", type: "button", title: "Later", "aria-label": "Later", onclick: () => (FB.step === "ask" ? fbAnswer("later") : (FB.done = true, fbPaint())) }, "×");
+    return h("div", { class: "lp-fb", role: "dialog", "aria-label": "LuauPilot feedback", "data-step": FB.step },
+      h("img", { class: "lp-fb-logo", src: asset("icons/logo-mark.png"), alt: "" }),
+      h("div", { class: "lp-fb-main" }, h("b", {}, t.title), h("p", {}, t.body), row), x);
+  }
+
+  function fbPaint() {
+    const calm = U.enabled && ["idle", "ready"].includes(U.status) && document.visibilityState === "visible";
+    const want = !FB.done && (FB.step !== "ask" || FB.open) && calm;
+    if (!want) { if (FB.el) { FB.el.classList.remove("in"); const old = FB.el; FB.el = null; setTimeout(() => old.remove(), 250); } return; }
+    if (FB.el && FB.el.dataset.step === FB.step) return;
+    if (FB.el) FB.el.remove();
+    FB.el = fbBuild();
+    document.body.append(FB.el);
+    requestAnimationFrame(() => FB.el && FB.el.classList.add("in"));
+  }
+
+  function feedbackState(s) {
+    if (!s) return;
+    FB.url = s.url || FB.url;
+    if (s.open && !FB.open && FB.step === "ask") { FB.done = false; FB.open = true; }
+    else if (!s.open && FB.step === "ask") FB.open = false;
+    fbPaint();
   }
 
   // ── lifecycle ───────────────────────────────────────────────────────────
@@ -474,7 +535,7 @@
   function init() {
     buildBar(); mountBar(); setEnabled(U.enabled);
     new MutationObserver(sweepSoon).observe(document.body, { childList: true, subtree: true, characterData: true });
-    setInterval(() => { mountBar(); sweep(); paintCover(); }, 700);
+    setInterval(() => { mountBar(); sweep(); paintCover(); fbPaint(); }, 700);
     window.addEventListener("resize", paintCover);
     // while the cover is up, nothing may reach the message box (keys, paste, drops)
     const lock = (e) => {
@@ -485,5 +546,5 @@
     ["keydown", "keypress", "beforeinput", "paste", "drop"].forEach((n) => document.addEventListener(n, lock, true));
   }
 
-  LP.ui = { bridgeText, init, status, toast, banner, bannerClear, chip, shot, session, setEnabled, setBridge, sweep };
+  LP.ui = { bridgeText, init, status, toast, banner, bannerClear, chip, shot, session, setEnabled, setBridge, sweep, feedbackState };
 })();

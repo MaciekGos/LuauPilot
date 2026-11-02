@@ -20,13 +20,13 @@ import uuid
 
 HERE = os.path.dirname(sys.executable) if getattr(sys, "frozen", False) else os.path.dirname(os.path.abspath(__file__))
 TOOLS = [{"name": "models_folder",
-          "description": "Temp folder (inside LuaPilot's own files) for models exported from Blender. Returns its absolute path "
+          "description": "Temp folder (inside LuauPilot's own files) for models exported from Blender. Returns its absolute path "
                          "and the files in it. Export every model and its textures there. clean:true empties the folder.",
           "inputSchema": {"type": "object", "properties": {
               "clean": {"type": "boolean", "description": "delete everything in the folder (only when starting a new, unrelated job)"}}}}]
 TOOLS.append({"name": "models_import",
-              "description": "Imports the FBX files in the models folder into the open Roblox Studio place through the LuaPilot Studio plugin "
-                             "(installed from the LuaPilot app: Settings > Install Studio plugin). Waits for the result. "
+              "description": "Imports the FBX files in the models folder into the open Roblox Studio place through the LuauPilot Studio plugin "
+                             "(installed from the LuauPilot app: Settings > Install Studio plugin). Waits for the result. "
                              "Imported models appear in the place; find them with inspect_instance (new MeshParts/Models in Workspace).",
               "inputSchema": {"type": "object", "properties": {
                   "files": {"type": "array", "items": {"type": "string"}, "description": "file names (default: all .fbx not imported yet)"},
@@ -107,7 +107,7 @@ def _http(url, key, data=None, headers=None, timeout=60):
 def _upload_one(path, cfg):
     name = os.path.splitext(os.path.basename(path))[0][:50]
     creator = {"groupId": cfg["group_id"]} if cfg["group_id"] else {"userId": cfg["user_id"]}
-    meta = {"assetType": "Model", "displayName": name, "description": "Made with LuaPilot", "creationContext": {"creator": creator}}
+    meta = {"assetType": "Model", "displayName": name, "description": "Made with LuauPilot", "creationContext": {"creator": creator}}
     b = uuid.uuid4().hex
     with open(path, "rb") as f:
         blob = f.read()
@@ -279,7 +279,7 @@ def _stamp(fn):
 
 
 def _no_cloud():
-    return RuntimeError("Roblox upload is not set up, so LuaPilot cannot import models by itself. Tell the user once: open the LuaPilot app > "
+    return RuntimeError("Roblox upload is not set up, so LuauPilot cannot import models by itself. Tell the user once: open the LuauPilot app > "
                         "Settings > 'Roblox upload', enter an Open Cloud API key (permission Assets: read+write) and their Roblox user ID. "
                         f"Until then ask for a manual import: Studio > Home > Import 3D, folder {folder()}, select all FBX files.")
 
@@ -332,9 +332,9 @@ def _import(args):
     while not plugin_alive() and time.time() < deadline:
         time.sleep(0.5)
     if not plugin_alive():
-        why = (f"The LuaPilot app listens on 127.0.0.1:{PLUGIN_PORT} but no plugin has called it" if LISTENING
-               else f"The LuaPilot app could not open port {PLUGIN_PORT} (another program uses it)")
-        raise RuntimeError(why + ". The LuaPilot Studio plugin is not answering. Tell the user: LuaPilot app > Settings > Install Studio plugin, "
+        why = (f"The LuauPilot app listens on 127.0.0.1:{PLUGIN_PORT} but no plugin has called it" if LISTENING
+               else f"The LuauPilot app could not open port {PLUGIN_PORT} (another program uses it)")
+        raise RuntimeError(why + ". The LuauPilot Studio plugin is not answering. Tell the user: LuauPilot app > Settings > Install Studio plugin, "
                            "restart Studio. Until then ask for a manual import: "
                            f"Studio > Home > Import 3D, folder {path}.")
     queued, errors = _prepare(todo, bool(args.get("force")))
@@ -359,4 +359,4 @@ def _import(args):
             LOG(f"import {fn}: {lines[-1].split(': ', 1)[1][:200]}")
     _save_json("imported.json", reg)
     lines += [f"{e}" for e in errors]
-    return {"text": "Import results:\n" + "\n".join(lines) + "\nThe models are in Workspace > LuaPilot Imports (each file is a Model).", "images": []}
+    return {"text": "Import results:\n" + "\n".join(lines) + "\nThe models are in Workspace > LuauPilot Imports (each file is a Model).", "images": []}

@@ -1,4 +1,4 @@
-// LuaPilot - shared DOM helpers used by the core and by every provider.
+// LuauPilot - shared DOM helpers used by the core and by every provider.
 // Loaded first; everything hangs off the global `LP` object.
 (() => {
   "use strict";
@@ -36,7 +36,7 @@ const sleep = (ms) => (ms >= 250 && LP.kit && LP.kit.slow ? LP.kit.slow(ms) : ne
     return (h >>> 0).toString(36);
   }
 
-  // Everything LuaPilot injects into a page carries data-lp-own so text readers skip it.
+  // Everything LuauPilot injects into a page carries data-lp-own so text readers skip it.
   const OWN = "[data-lp-own]";
 
   const BLOCK = new Set(["P", "DIV", "LI", "UL", "OL", "PRE", "BLOCKQUOTE", "H1", "H2", "H3", "H4",

@@ -1,4 +1,4 @@
-// LuaPilot provider: DeepSeek (chat.deepseek.com).
+// LuauPilot provider: DeepSeek (chat.deepseek.com).
 //
 // Site facts this file relies on (selectors marked [guess] could not be verified live):
 //  * one chat message = one `.ds-message`; its parent wrapper carries
@@ -53,7 +53,7 @@
   function clip(text) {
     if (!text || text.length <= SEND_MAX) return text;
     const gone = text.length - SEND_MAX;
-    const mark = `\n\n[... LuaPilot: output shortened to fit DeepSeek's input limit - ${gone} of ` +
+    const mark = `\n\n[... LuauPilot: output shortened to fit DeepSeek's input limit - ${gone} of ` +
       `${text.length} characters omitted. Do NOT repeat the command; work with the head and tail shown. ...]\n\n`;
     const room = SEND_MAX - mark.length;
     const head = Math.floor(room * 0.85);

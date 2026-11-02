@@ -18,7 +18,7 @@ PORT="${LP_BRIDGE_PORT:-17613}"
 old="$(lsof -ti tcp:"$PORT" -sTCP:LISTEN 2>/dev/null | head -n1)"
 if [ -n "$old" ]; then echo "Replacing the bridge already running on port $PORT (pid $old)..."; kill "$old" 2>/dev/null; sleep 1; fi
 
-echo "=== LuaPilot Bridge === (keep this window open)"
+echo "=== LuauPilot Bridge === (keep this window open)"
 "$PY" bridge.py
 echo; echo "Bridge stopped (exit code $?)."
 read -r -p "Press Enter to close." _

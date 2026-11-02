@@ -32,3 +32,4 @@ footer { margin-top: 12px; text-align: center; color: var(--dim); font-size: 11p
 .ric { width: 30px; height: 30px; border-radius: 9px; background: rgba(255,255,255,.06); display: grid; place-items: center; flex: none; color: var(--acc); }
 .rt { flex: 1; } .row { justify-content: flex-start; } .switch, .pill { margin-left: auto; }
 .lp-ico { fill: currentColor; vertical-align: -3px; } .pill .lp-ico { margin-right: 2px; }
+.note { margin: 10px 0 0; padding: 8px 10px; border-left: 3px solid var(--dim); color: var(--dim); font-size: 10.5px; line-height: 1.4; } .note b { color: inherit; opacity: .95; }

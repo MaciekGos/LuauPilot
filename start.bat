@@ -2,12 +2,12 @@
 @echo off
 setlocal
 chcp 65001 >nul
-title LuaPilot Bridge
+title LuauPilot Bridge
 cd /d "%~dp0"
 if not exist logs mkdir logs >nul 2>nul
 
 echo.
-echo   === LuaPilot Bridge ===
+echo   === LuauPilot Bridge ===
 echo.
 if not exist "%~dp0bridge.py" (
     echo   ERROR: bridge.py not found next to start.bat.
@@ -40,7 +40,7 @@ echo   [2/3] Checking the websockets library...
 
 echo   [3/3] Starting the bridge...
 echo.
-echo   Keep this window open (you can minimise it). LuaPilot stops when it is closed.
+echo   Keep this window open (you can minimise it). LuauPilot stops when it is closed.
 echo.
 %PY% "%~dp0bridge.py"
 echo.

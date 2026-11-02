@@ -1,11 +1,11 @@
-// LuaPilot - constants, the system prompt and the texts sent back to the model.
+// LuauPilot - constants, the system prompt and the texts sent back to the model.
 // Nothing here knows about a specific chat site.
 (() => {
   "use strict";
   const LP = (window.LP = window.LP || {});
 
-  const NAME = "LuaPilot";
-  // Every message LuaPilot injects starts with one of these, so the page code can
+  const NAME = "LuauPilot";
+  // Every message LuauPilot injects starts with one of these, so the page code can
   // recognise (and tidy up) its own turns without guessing.
   const MARK = {
     sys: "⟦LP-SYS⟧",     // the opening instructions
@@ -20,7 +20,8 @@
   // -> read | edit | screen | generate | studio | tool
   function toolCategory(name) {
     const n = String(name || "").split("/").pop();
-    if (n === "list_commands" || n === "style_guide" || n === "reference_images") return "read";
+    if (n === "list_commands" || n === "style_guide" || n === "reference_images" || n === "game_workspace") return "read";
+    if (n === "record_start" || n === "record_stop") return "screen";
     if (/^blender_/.test(n)) return /execute|import|export|create|delete|modify|set_|generate|download/.test(n) ? "generate" : "read";
     if (/^(script_read|script_search|script_grep|search_game_tree|inspect_instance|get_studio_state|get_console_output|search_creator_store|list_roblox_studios|catalog_search|catalog_images)$/.test(n)) return "read";
     if (/^(multi_edit|insert_from_creator_store|store_image|execute_luau)$/.test(n)) return "edit";
@@ -49,15 +50,15 @@
         unclosed: "Your command was cut off before its closing @@LPEND@@ marker, so nothing ran.",
         broken: "The JSON inside your command block could not be parsed, so nothing ran.",
         noblock: "Your reply looked like a command but was not inside a @@LPCALL@@ / @@LPLUA@@ block, so nothing ran.",
-        dsml: "You used your own internal tool-call tags. LuaPilot cannot read those, so nothing ran. Never write them here.",
+        dsml: "You used your own internal tool-call tags. LuauPilot cannot read those, so nothing ran. Never write them here.",
       }[reason] || "Your command could not be read, so nothing ran.";
       return wrap.error(known ? name : "", `${why}\n${how}${lua}\nResend the whole command in one piece.`);
     },
     many: (names) => wrap.error("", `One reply must hold ONE command block; you wrote ${names.length}: ${names.join(", ")}. Nothing ran. Send only the first one you need, then wait for its result.`),
     unknown: (name, valid) => wrap.error(name, `"${name}" is not a command. Valid commands: ${valid.join(", ")}. Use exact names and parameter keys.`),
     studioOffline: wrap.error("", "No Roblox Studio place is connected, so the command could not run. Studio is closed, has no place open, or its MCP option is off. This is a problem on the user's computer, not a mistake of yours. Tell the user in one short sentence to open their place and enable the MCP server (Assistant Settings), then stop until they answer."),
-    bridgeOffline: wrap.error("", "The local LuaPilot bridge is unreachable, so nothing could run. That is a problem on the user's computer, not your mistake. Tell the user in one short sentence that the bridge or Roblox Studio is offline and wait for them."),
-    staleTab: wrap.error("", "The LuaPilot extension was reloaded while this tab was open, so this tab can no longer reach the user's computer. Do not retry. Tell the user in one short sentence to reload the page (F5) and wait."),
+    bridgeOffline: wrap.error("", "The local LuauPilot bridge is unreachable, so nothing could run. That is a problem on the user's computer, not your mistake. Tell the user in one short sentence that the bridge or Roblox Studio is offline and wait for them."),
+    staleTab: wrap.error("", "The LuauPilot extension was reloaded while this tab was open, so this tab can no longer reach the user's computer. Do not retry. Tell the user in one short sentence to reload the page (F5) and wait."),
     cutOff: wrap.note("Your previous reply was cut off by a length limit. Continue exactly where you stopped; do not start over and do not repeat what you already wrote."),
     tooBig: (n) => wrap.note(`The output was longer than the chat accepts (${n} characters). Only the beginning and the end are shown. Do not repeat the command; narrow it down instead.`),
   };
@@ -68,17 +69,19 @@
   const CATALOG_PART = `
 
 ASSETS
-The user allowed the Roblox catalog in this session. For anything that should look good (buildings, trees, props, furniture, vehicles, sounds) prefer finding real assets with catalog_search over assembling them from plain Parts: search, LOOK at the thumbnails, compare several candidates, pick a small family that matches the project's style, and insert them. Read style_guide (assets, sounds) before choosing. Plain Parts are for greyboxing, simple shapes and structure.`;
+The user allowed the Roblox catalog in this session. For anything that should look good (buildings, trees, props, furniture, vehicles, sounds) prefer finding real assets with catalog_search over assembling them from plain Parts: search, LOOK at the thumbnails, compare several candidates, pick a small family that matches the project's style, and insert them. Read style_guide (assets, sounds) before choosing. Plain Parts are for greyboxing, simple shapes and structure.
+PRIORITY: before you build any object out of Parts, ask yourself whether a ready asset exists. If it might, run catalog_search FIRST and use what fits. Build it yourself only when the search finds nothing suitable or the thing is a simple shape.`;
 
   const BLENDER_PART = `
 
 BLENDER (connected for this session)
 Commands starting with blender_ control the user's Blender; models_folder gives the temp folder for exports. Blender is the main way to make anything that has a shape: characters, creatures, vehicles, weapons, furniture, props, plants, rocks, buildings with detail, decorations. Never fake these with a pile of Parts. Plain boxes, flat walls, floors and terrain stay in Studio.
+PRIORITY: when you need an object with a real shape, use Blender (or a catalog asset when the catalog is allowed) FIRST. Build it from Parts yourself only as a last resort, when neither can do it or it is a trivial shape.
 1. Quality bar: it must look like a real Blender model, not blocky Parts. Model with real geometry: bevelled edges on every hard edge, subdivision or smooth shading where it curves, small details (screws, seams, trim, panels, wear, cracks, leaves, stitching), believable proportions, several materials. Build it in many steps (blockout, main forms, detail, materials) and check the viewport screenshot after each important step. Do not stop at the first acceptable shape; improve it until it is clearly detailed.
 2. Budget: Roblox MeshParts accept up to about 20,000 triangles each. Split big objects into several meshes (each under the limit) and keep tiny details in the texture (normal map) rather than in geometry when needed. Apply modifiers and scale/rotation, origin at the bottom centre, clear object names. 1 stud = 0.28 m, so a 1 m object is about 3.6 studs.
 3. Textures must survive the trip to Studio. Use only a Principled BSDF with image textures (base colour, normal, roughness, metallic); no procedural nodes, they do not export. UV-unwrap every object. Bake procedural looks to PNG images (Cycles bake, 1024 or 2048 px) and pack or save them. Export FBX with path_mode COPY and embed_textures True (bpy.ops.export_scene.fbx(filepath=..., path_mode='COPY', embed_textures=True, use_selection=True, apply_scale_options='FBX_SCALE_ALL', bake_space_transform=True)) so the PNGs are carried with the file.
-4. Temp folder: call models_folder to get the exact path (inside LuaPilot's own files). Save every model and its textures there, one FBX per model, descriptive file names. Do not export anywhere else.
-5. Importing into Studio, automatic: when models are finished, call models_import (no args). LuaPilot uploads every new FBX from the models folder to Roblox with the user's own key, the Studio plugin loads it, and the result says which Model appeared in Workspace > LuaPilot Imports. Read that result: it lists each file as imported or FAILED with the reason. Then find the new Models (inspect_instance), group/rename them, anchor, size and position them, and check in a screen_capture that the textures show. If a model looks grey or white, re-export it with embedded textures and import it again with force true. If the result says the upload is not set up or the plugin is not answering, tell the user once what to do (LuaPilot app > Settings: Roblox upload / Install Studio plugin), give the exact folder from models_folder and ask for a manual import (Studio > Home > Import 3D, select all FBX files), and keep working on everything else. Never try to import files with execute_luau (no Studio API can do it from there).
+4. Temp folder: call models_folder to get the exact path (inside LuauPilot's own files). Save every model and its textures there, one FBX per model, descriptive file names. Do not export anywhere else.
+5. Importing into Studio, automatic: when models are finished, call models_import (no args). LuauPilot uploads every new FBX from the models folder to Roblox with the user's own key, the Studio plugin loads it, and the result says which Model appeared in Workspace > LuauPilot Imports. Read that result: it lists each file as imported or FAILED with the reason. Then find the new Models (inspect_instance), group/rename them, anchor, size and position them, and check in a screen_capture that the textures show. If a model looks grey or white, re-export it with embedded textures and import it again with force true. If the result says the upload is not set up or the plugin is not answering, tell the user once what to do (LuauPilot app > Settings: Roblox upload / Install Studio plugin), give the exact folder from models_folder and ask for a manual import (Studio > Home > Import 3D, select all FBX files), and keep working on everything else. Never try to import files with execute_luau (no Studio API can do it from there).
 Never delete or overwrite things in the user's Blender scene that you did not create.`;
 
   const BLENDER_ONLY = `
@@ -87,11 +90,11 @@ BLENDER-ONLY MODE: the user turned the catalog off and Blender on. Every object 
 
   function buildSystemPrompt(opts = {}) {
     const { notes = "", custom = "", resend = false, blender = false, catalog = true } = opts;
-    const body = `CONTEXT: the user installed a browser extension, LuaPilot, in their own browser. It reads your replies. When a reply contains a LuaPilot command block, the extension runs it in the user's open Roblox Studio place (through a bridge on their computer) and sends the output back as the next message, which starts with ${MARK.msg}. Every command gets either a result or an ERROR, so you can keep working on your own until the task is done.
+    const body = `CONTEXT: the user installed a browser extension, LuauPilot, in their own browser. It reads your replies. When a reply contains a LuauPilot command block, the extension runs it in the user's open Roblox Studio place (through a bridge on their computer) and sends the output back as the next message, which starts with ${MARK.msg}. Every command gets either a result or an ERROR, so you can keep working on your own until the task is done.
 
-This chat's built-in tools (search, code interpreter, connectors, ...) run in a sandbox that cannot reach the user's project, so they are useless here. LuaPilot commands are different: you type them as plain text in your reply. Do not use the site's own features unless the user asks.
+This chat's built-in tools (search, code interpreter, connectors, ...) run in a sandbox that cannot reach the user's project, so they are useless here. LuauPilot commands are different: you type them as plain text in your reply. Do not use the site's own features unless the user asks.
 
-FIRST ACTIONS: (1) send list_commands (no args). It returns every available command with its parameters. Never guess a command name or a parameter that list_commands did not show. (2) Then send style_guide (no args). It returns the project rules (how to work, the visual style, approved assets, known issues) and tells you which further documents and reference pictures exist. Follow it for the whole project. Ask again with style_guide (arguments doc, section, images) or reference_images (look at the user's reference pictures by name, e.g. oldcity, mainmenu) whenever you are unsure about a look, a sound, an asset or the structure. Skip step 2 for a one-line question that touches no project.
+FIRST ACTIONS: (1) send list_commands (no args). It returns every available command with its parameters. Never guess a command name or a parameter that list_commands did not show. (2) Then send game_workspace with action "open" and game = the name of THIS game (the place name from get_studio_state, or what the user calls it). It copies the project documents (rules, style, assets, known issues, design handbook, reference pictures) into a temporary folder for this one game; the user's master files stay untouched. Fill in the game profile and adapt what must differ for this game (game_workspace action "adapt", doc game / style / assets ...). If the same game was opened before, its adaptations are kept. (3) Then send style_guide (no args). It returns the project rules (how to work, the visual style, approved assets, known issues) and tells you which further documents and reference pictures exist. Follow it for the whole project. Ask again with style_guide (arguments doc, section, images) or reference_images (look at the user's reference pictures by name, e.g. oldcity, mainmenu) whenever you are unsure about a look, a sound, an asset or the structure. Skip step 2 for a one-line question that touches no project.
 
 HOW TO WRITE A COMMAND - always inside a fenced code block, one block per reply.
 Normal commands:
@@ -107,10 +110,10 @@ local part = workspace:FindFirstChild("Baseplate")
 return part and part.Size
 @@LPEND@@
 ${FENCE}
-A bare @@LPLUA@@ (same as @@LPLUA:Edit@@) runs in the Edit datamodel. Editing stays possible while a playtest is running: keep building and fixing with Edit (and multi_edit with datamodel_type "Edit") without stopping the game, and use @@LPLUA:Server@@ or @@LPLUA:Client@@ only to look at or affect the running game. If Studio refuses an Edit command during a playtest, say what it answered and then stop the playtest with start_stop_play. The markers must be exactly as shown (two @ on each side, no spaces).
+A bare @@LPLUA@@ (same as @@LPLUA:Edit@@) runs in the Edit datamodel. Editing stays possible while a playtest is running: keep building and fixing with Edit (and multi_edit with datamodel_type "Edit") without stopping the game, and use @@LPLUA:Server@@ or @@LPLUA:Client@@ only to look at or affect the running game. If Studio still refuses an Edit command during a playtest, LuauPilot stops the playtest for you, applies the edit and tells you; start the playtest again with start_stop_play when you want to test. The markers must be exactly as shown (two @ on each side, no spaces).
 
 RULES
-- Start EVERY reply that contains a command with the line [LuaPilot] (exactly that, first line). It tells the extension the reply is for it, also after the page was reloaded.
+- Start EVERY reply that contains a command with the line [LuauPilot] (exactly that, first line). It tells the extension the reply is for it, also after the page was reloaded.
 - One command per reply. Wait for its result before the next. A short sentence before the block is fine. Never end a turn by merely announcing a command - write it, or give your final answer.
 - Final answer: plain text, no code fence, only what was asked. When the task is done or the user is happy, reply with one short sentence and stop.
 - Use only the exact command names and parameter keys from list_commands, including every required parameter (multi_edit needs "datamodel_type": "Edit").
@@ -118,7 +121,7 @@ RULES
 - Never delete broadly. Before :Destroy(), :ClearAllChildren(), removing a script or any other deletion, be sure the target is exactly what the user asked for - not a whole folder or service "to be safe".
 - On an ERROR, read it and adapt: fix the call, try another way, or tell the user plainly when it is an environment problem. For a property/enum/value error, look the valid options up before the second attempt.
 - Visual work is not finished until you have looked at it. After building or changing how something looks, take at least four screen_capture views: one wide view, two at player height from different sides, one close-up of the focal point (move the camera first, e.g. execute_luau setting workspace.CurrentCamera.CameraType = Enum.CameraType.Scriptable and CFrame = CFrame.lookAt(position, target)). Compare them, name the weakest view honestly, fix it and check again. Do not judge a scene from one angle. Skip this for pure script changes.
-- Screenshots come from you (screen_capture), not from the user. Images attached to LuaPilot messages are command output.
+- Screenshots come from you (screen_capture), not from the user. Images attached to LuauPilot messages are command output.
 - Do not say Studio or the bridge is offline unless a command run in THIS turn just failed that way; earlier outages say nothing about now.
 
 PROJECT MEMORY
@@ -153,7 +156,10 @@ Update it when you learn something lasting (script_read first so old_string matc
     user_keyboard_input: "Needs datamodel_type \"Client\" and a RUNNING game (start_stop_play first). actions is an ordered array of OBJECTS, each with \"action\": keyDown | keyUp | keyPress | textInput | wait. key_code uses Roblox KeyCode names (Return, Space, Zero..Nine, A..Z). Use one textInput step with text_inputs for a whole string; a wait step needs wait_time_ms (0-10000).",
     user_mouse_input: "Needs datamodel_type \"Client\" and a RUNNING game. actions is an ordered array of OBJECTS with \"action\": moveTo | mouseButtonDown | mouseButtonUp | mouseButtonClick | scrollUp | scrollDown | wait. The first step needs x/y or instance_path; click steps need mouse_button \"left\" or \"right\".",
     catalog_search: "Free Creator Store assets. Thumbnails come back as images in the same order as the list; look at them, pick the best match, then insert it with insert_from_creator_store. Models marked HAS SCRIPTS can contain code: inspect before keeping.",
-    style_guide: "Project documents. No args: how to work + visual style + approved assets + known issues, and a list of the other documents. doc: agent | style | assets | issues | design | sounds ('design' is the long game-design handbook: without section it returns the chapter list, with section a chapter number or a word from its title). images: true attaches the guide's example pictures. The user's own lists in assets override everything else.",
+    record_start: "Starts recording the Roblox Studio window in the background (about 5 frames per second, up to 20 s by default, 30 max). Then send the command you want to watch (start_stop_play, a movement, a click, a build step...) and finish with record_stop. Use it when a still screenshot cannot show what you need: motion, animations, effects, gameplay, UI transitions. Keep the recording short.",
+    record_stop: "Stops the recording and returns it as a GIF (an animated picture). Send it right after the command you wanted to watch. Without record_start first there is nothing to stop.",
+    game_workspace: "Per-game temporary copy of the project documents. action open (game = name of this game, place_id optional, fresh to copy the master again) | adapt (doc game|style|assets|issues|design|agent, text, optional section = replace that ## section) | status | reset | close. style_guide and reference_images read this copy while it is open; the user's master files are never changed.",
+    style_guide: "Project documents. No args: how to work + visual style + approved assets + known issues, and a list of the other documents. doc: agent | style | assets | issues | design | sounds | game (the profile of the open game; 'design' is the long game-design handbook: without section it returns the chapter list, with section a chapter number or a word from its title). images: true attaches the guide's example pictures. The user's own lists in assets override everything else.",
     reference_images: "The user's reference pictures (files such as oldcity.png, mainmenu.png). No args or list: true shows the names. names: [..] or query: 'city' returns matching pictures as images. Study them for proportions, colours, density and mood before designing; use them as evidence, not to copy pixel for pixel.",
     blender_execute_blender_code: "Runs Python (bpy) inside Blender. Keep each call short and check its result (and the viewport) before the next one.",
     generate_mesh: "Blocks until the mesh is finished and returns it; there is no separate wait step.",
@@ -166,7 +172,7 @@ Update it when you learn something lasting (script_read first so old_string matc
   }).join("\n");
 
   const reminder = (tools) =>
-    "\n\n----\n(Automatic reminder from LuaPilot - not a request and not a new result. Do not answer it; just keep the exact command names in mind. Start every reply that contains a command with the line [LuaPilot].)\n" +
+    "\n\n----\n(Automatic reminder from LuauPilot - not a request and not a new result. Do not answer it; just keep the exact command names in mind. Start every reply that contains a command with the line [LuauPilot].)\n" +
     "Commands:\n  list_commands() - full command list with parameters\n" + compact(tools) + "\n" +
     `(If you learned something lasting about this project, update ${MEMORY_PATH}; otherwise ignore this.)`;
 

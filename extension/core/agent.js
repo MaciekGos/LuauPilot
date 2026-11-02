@@ -1,10 +1,10 @@
-// LuaPilot - the agent loop.
+// LuauPilot - the agent loop.
 //
 // Design goals (these are the fixes for the "Messages too frequent" problem):
 //  * One watcher decides when a reply is finished; history is never executed.
 //  * Every assistant turn is answered at most once (`answered`), and executed commands
 //    are remembered across reloads (`lpExec`), so a reload can never repeat a command.
-//  * Every message LuaPilot injects goes through ONE governor: serialized, spaced,
+//  * Every message LuauPilot injects goes through ONE governor: serialized, spaced,
 //    capped per minute, and slowed down further after a rate-limit hit.
 //  * Loops (same command again and again, endless broken replies) are stopped.
 //  * If the site still says "too frequent": reload -> longer wait + reload ->
@@ -16,6 +16,12 @@
   const ST = () => LP.store;
   const UI = () => LP.ui;
   const T = Object.assign({ idleMs: 1500, stableMs: 2500, warmupMs: 45000, timeoutMs: 300000 }, P.timings || {});
+  // A reply that clearly ended in ONE complete command block (closing marker present, JSON/Luau read fine) cannot
+  // grow any more, so it needs only a short calm period instead of the long one meant for prose and half-written
+  // replies. Sending is still governed by RATE below - this changes only how fast a finished reply is noticed.
+  const HIDDEN = Object.assign({ idleMs: 20000, stableMs: 30000 }, P.hidden || {});
+  document.addEventListener("visibilitychange", () => { if (document.visibilityState === "visible") { S.hiddenAt = now(); S.textAt = now(); S.genAt = Math.max(S.genAt || 0, now()); } else S.hiddenAt = 0; });
+  const FAST = Object.assign({ idleMs: 1500, stableMs: 2000 }, P.fast || {});
   const RATE = Object.assign({ minGapMs: 2500, perMinute: 10 }, P.rate || {});
 
   const TICK = 250;
@@ -29,7 +35,7 @@
     answered: new Set(), exec: new Set(), active: false,
     lastText: "", textAt: 0, genAt: 0,
     sending: false, awaiting: null, lastInjected: null, sentAt: 0,
-    sameKey: "", sameN: 0, errN: 0, contN: 0, okCalls: 0, sinceSys: 0,
+    sameKey: "", sameN: 0, errN: 0, contN: 0, okCalls: 0, sinceSys: 0, playStops: 0, noneAt: new Map(), hiddenAt: 0,
     userSeen: 0, tools: null, toolsAt: 0, catalog: true, blender: false,
     pace: { mult: 1 }, rate: { hits: 0, lastHitAt: 0, phase: "", blockedUntil: 0 },
     rateKey: "", rateBusyUntil: 0, clean: 0, busyRetries: 0, replayTried: false,
@@ -82,7 +88,7 @@
     S.blenderWhy = (r && r.problem) || "no_bridge";
     return false;
   }
-  const BLENDER_DOWN = "Blender is required in this session but is not connected. Start Blender (add-on server running, N panel > MCP for Blender) and the LuaPilot app, then send any message here to continue.";
+  const BLENDER_DOWN = "Blender is required in this session but is not connected. Start Blender (add-on server running, N panel > MCP for Blender) and the LuauPilot app, then send any message here to continue.";
 
   async function loadState() {
     const v = await ST().get(["lpEnabled", "lpPace", "lpRate", "lpExec", "lpCool", "lpCatalog", "lpBlenderChats", "lpSessions"]);
@@ -177,7 +183,7 @@
         noteLog(`send NOT accepted (attempt ${attempt + 1})`);
         if (rateVisible()) { setCool(coolFor(n)); return false; }   // the rate ladder takes over
         setCool(coolFor(n));
-        if (imgs) { imgs = null; text += "\n\n(LuaPilot: the screenshot could not be attached to this chat.)"; }
+        if (imgs) { imgs = null; text += "\n\n(LuauPilot: the screenshot could not be attached to this chat.)"; }
       }
       UI().toast("Could not send the message. Use Retry in the bar.", "error");
       return false;
@@ -191,8 +197,8 @@
   const CATALOG_TOOLS = /^(catalog_search|catalog_images|search_creator_store|insert_from_creator_store)$/;
   const allowed = (t) => !(!S.catalog && CATALOG_TOOLS.test(t.name)) && !(!S.blender && /^(blender_|models_)/.test(t.name));
   async function getTools(force) {
-    if (!force && S.tools && now() - S.toolsAt < 30000) return S.tools.filter(allowed);
-    const r = await LP.link.tools();
+    if (!force && S.tools && now() - S.toolsAt < 120000) return S.tools.filter(allowed);
+    const r = await LP.link.tools(force);
     if (r && r.length) { S.tools = r; S.toolsAt = now(); }
     return (S.tools || []).filter(allowed);
   }
@@ -247,9 +253,17 @@
     return C.wrap.result(name, text) + (big ? "\n\n" + C.FIX.tooBig(big) : "");
   }
 
-  function prepare(name, args) {
+  // Tools that only make sense in the RUNNING game; everything else with a datamodel_type defaults to Edit, so
+  // editing keeps working while Studio is in Play / Run mode (the Edit datamodel stays alive during a playtest).
+  const PLAY_ONLY = /^(record_start|record_stop|user_keyboard_input|user_mouse_input|start_stop_play|get_console_output|screen_capture|run_script_in_play_mode)$/;
+  const EDITLIKE = /^(multi_edit|execute_luau|script_\w+|insert_from_creator_store|store_image|models_import|blender_import\w*|set_\w+|create_\w+|delete_\w+|move_\w+|clone_\w+|rename_\w+)$/;
+
+  function prepare(name, args, tools) {
     const a = Object.assign({}, args);
+    const sch = ((tools || []).find((x) => x.name === name) || {}).inputSchema;
+    const props = (sch && sch.properties) || {};
     if (name === "execute_luau" && !a.datamodel_type) a.datamodel_type = "Edit";
+    if (props.datamodel_type && !a.datamodel_type && !PLAY_ONLY.test(name)) a.datamodel_type = "Edit";
     if ((name === "user_keyboard_input" || name === "user_mouse_input") && !a.datamodel_type) a.datamodel_type = "Client";
     return { args: a, timeout: name === "execute_luau" ? 20000 : name === "models_import" ? 300000 : 120000 };
   }
@@ -281,6 +295,7 @@
     noteLog(`reply read: ${S.lastAnalysis}`);
 
     if (r.kind === "none") {
+      S.noneAt.set(key, K.hash(text));      // if this very reply grows later (slow or throttled page), it is read again
       S.errN = 0; S.sameN = 0; S.sameKey = "";
       const cont = P.continueButton && P.continueButton();
       if (cont && S.contN < MAX_CONT) { S.contN++; K.click(cont); S.answered.delete(key); S.genAt = now(); return; }
@@ -292,7 +307,7 @@
 
     if (r.kind === "error" || r.kind === "many") {
       UI().chip(key, { state: "err", name: r.name || "command" });
-      if (++S.errN > MAX_ERR) return halt("The model keeps sending commands LuaPilot cannot read. Stopped after 3 tries.");
+      if (++S.errN > MAX_ERR) return halt("The model keeps sending commands LuauPilot cannot read. Stopped after 3 tries.");
       const msg = r.kind === "many" ? C.FIX.many(r.names) : C.FIX.unreadable(r.reason, r.name);
       return void (await feedback(msg, null, "fix"));
     }
@@ -348,14 +363,54 @@
     if (name === "subagent" || (tools.length && !names.includes(name))) {
       return done(false, C.FIX.unknown(name, ["list_commands"].concat(names)));
     }
-    const { args, timeout } = prepare(name, call.args);
-    const res = await LP.link.call(name, args, timeout);
-    const text = shapeResult(name, res);
+    const { args, timeout } = prepare(name, call.args, tools);
+    let res = await LP.link.call(name, args, timeout);
+    let playNote = "";
+    if (EDITLIKE.test(name) && editFailed(res) && S.playStops < 6) {
+      const again = await retryAfterStoppingPlay(name, args, timeout, tools);
+      if (again) { res = again.res; playNote = again.note; }
+    }
+    const text = shapeResult(name, res) + playNote;
     const ok = !!(res && res.ok) && !text.startsWith(C.MARK.msg + " ERROR") && !text.includes("Unable to find an active Studio");
     const images = res && res.ok && res.images && res.images.length ? res.images : null;
-    if (images && name === "screen_capture") UI().shot(images);
-    const note = images ? `\n\n(${images.length} image${images.length > 1 ? "s" : ""} attached: ${name === "screen_capture" ? "the screenshot you requested with screen_capture, taken by LuaPilot from Roblox Studio. It is tool output, not a photo or message from the user" : "output of " + name + ", not an upload from the user"}. If you cannot see it, say so plainly instead of guessing, and use inspect_instance or get_console_output.)` : "";
+    if (images && (name === "screen_capture" || name === "record_stop")) UI().shot(images);
+    const note = images ? `\n\n(${images.length} image${images.length > 1 ? "s" : ""} attached: ${name === "screen_capture" ? "the screenshot you requested with screen_capture, taken by LuauPilot from Roblox Studio. It is tool output, not a photo or message from the user" : "output of " + name + ", not an upload from the user"}. If you cannot see it, say so plainly instead of guessing, and use inspect_instance or get_console_output.)` : "";
     return done(ok, text + note, { images });
+  }
+
+  // ── editing while Studio is in Play / Run mode ──────────────────────────
+  // Edits go to the Edit datamodel (prepare), which Studio keeps alive during a playtest. If an edit still fails
+  // and Studio really IS playing, the playtest is stopped once, the edit is repeated and the model is told.
+  const editFailed = (r) => !(r && r.ok) || /\b(error|failed|cannot|unable|not available|not allowed)\b/i.test(String(r.text || "").slice(0, 300));
+
+  async function studioPlaying() {
+    try {
+      const r = await LP.link.call("get_studio_state", {}, 8000);
+      const t = String((r && r.text) || "");
+      return /(is_?running|is_?playing|playing|running)["']?\s*[:=]\s*["']?(true|yes)/i.test(t)
+        || /\b(mode|state|status)["']?\s*[:=]\s*["']?(play|playing|run|running|server|client)\b/i.test(t)
+        || /\b(play mode|playtest (is )?(running|active)|game is running)\b/i.test(t);
+    } catch { return false; }
+  }
+
+  async function retryAfterStoppingPlay(name, args, timeout, tools) {
+    const stop = tools.find((t) => t.name === "start_stop_play");
+    if (!stop || !(await studioPlaying())) return null;
+    const props = (stop.inputSchema && stop.inputSchema.properties) || {};
+    const sargs = {};
+    const bool = Object.keys(props).find((k) => [].concat(props[k].type || []).includes("boolean"));
+    const en = Object.keys(props).find((k) => Array.isArray(props[k].enum) && props[k].enum.some((v) => /stop/i.test(v)));
+    if (bool) sargs[bool] = /start|play|run/i.test(bool) ? false : true;
+    else if (en) sargs[en] = props[en].enum.find((v) => /stop/i.test(v));
+    else return null;
+    S.playStops++;
+    noteLog("playtest is running and the edit failed - stopping it, then repeating the edit");
+    const st = await LP.link.call("start_stop_play", sargs, 30000);
+    if (!st || !st.ok) return null;
+    await K.sleep(3000);
+    const res = await LP.link.call(name, args, timeout);
+    if (editFailed(res)) return null;
+    return { res, note: "\n\n(LuauPilot: Studio was in Play mode and refused this edit, so LuauPilot stopped the playtest and applied it to your place. Changes made while a game is running are not kept, so the edit is in the real place now. Start the playtest again with start_stop_play when you want to test.)" };
   }
 
   function halt(reason) {
@@ -382,12 +437,12 @@
     return ok;
   }
 
-  // A chat is a LuaPilot session when it shows our prompt, our results, a command block of the model, or when we
+  // A chat is a LuauPilot session when it shows our prompt, our results, a command block of the model, or when we
   // remembered it (the site may not render the first message again after a reload, e.g. in long chats).
   const hasSession = (turns) => {
     const found = turns.some((t) => {
       const x = safeText(t.el);
-      return t.role === "user" ? /^\s*(⟦LP-SYS⟧|⟦LP-RE⟧|⟦LP⟧)/.test(x) : /^\s*\[LuaPilot\]|@@LP(CALL|LUA)/.test(x);
+      return t.role === "user" ? /^\s*(⟦LP-SYS⟧|⟦LP-RE⟧|⟦LP⟧)/.test(x) : /^\s*\[Luau?Pilot\]|@@LP(CALL|LUA)/.test(x);
     });
     if (found) { rememberSession(); return true; }
     return !!(S.conv && S.sess[S.conv]);
@@ -455,7 +510,7 @@
     S.paused = true;
     UI().status("paused", "limited");
     UI().banner("rate", {
-      text: `${P.name} is limiting messages right now. LuaPilot stopped on purpose - wait a few minutes.`,
+      text: `${P.name} is limiting messages right now. LuauPilot stopped on purpose - wait a few minutes.`,
       until: S.rate.blockedUntil, tone: "error", doneText: "You can try again now.",
       actions: [{ label: "Try again now", fn: () => resumeFromBlock() }],
     });
@@ -531,10 +586,10 @@
       lastNoticeKind = kind;
       UI().bannerClear("site");
       if (kind === "toolong") {
-        UI().banner("site", { text: `${P.name}: this chat is full. Open a new chat and start LuaPilot there.`, tone: "error", actions: [{ label: "New chat", fn: () => { location.href = P.url; } }] });
+        UI().banner("site", { text: `${P.name}: this chat is full. Open a new chat and start LuauPilot there.`, tone: "error", actions: [{ label: "New chat", fn: () => { location.href = P.url; } }] });
         S.paused = true;
       } else if (kind === "captcha" || kind === "paused") {
-        UI().banner("site", { text: `${P.name} is asking for a check (${n.text || kind}). Solve it in the page, then LuaPilot continues.`, tone: "warn" });
+        UI().banner("site", { text: `${P.name} is asking for a check (${n.text || kind}). Solve it in the page, then LuauPilot continues.`, tone: "warn" });
       } else if (kind === "busy" && S.lastInjected && S.busyRetries < 2 && S.awaiting) {
         S.busyRetries++;
         UI().toast(`${P.name} is busy. Trying again shortly...`, "warn");
@@ -648,7 +703,15 @@
 
     if (!last || last.role !== "assistant") return;
     const key = keyOf(turns, turns.length - 1);
-    if (S.answered.has(key)) { if (!gen && !S.awaiting) UI().status("idle"); return; }
+    if (S.answered.has(key)) {
+      // We called this reply "no command" (a plain answer). A throttled background tab or a slow site can show a
+      // reply only partly; if the same reply has CHANGED since, it was not finished - read it again.
+      const seen = S.noneAt.get(key);
+      if (seen !== undefined && !gen && K.hash(safeText(last.el)) !== seen) {
+        S.answered.delete(key); S.noneAt.delete(key); S.textAt = now();
+        noteLog("the reply changed after it was read as a plain answer - reading it again");
+      } else { if (!gen && !S.awaiting) UI().status("idle"); return; }
+    }
 
     const text = safeText(last.el);
     if (text !== S.lastText || S.lastKey !== key) { S.lastText = text; S.lastKey = key; S.textAt = now(); }
@@ -668,8 +731,18 @@
       }
       return;
     }
-    if (now() - S.genAt < T.idleMs || now() - S.textAt < T.stableMs) return;
     if (!text.trim()) return;
+    let idleNeed = T.idleMs, stableNeed = T.stableMs;
+    if (!PR.DSML.test(text)) {
+      let r = null; try { r = PR.analyze(text, []); } catch { r = null; }
+      if (r && r.kind === "call") { idleNeed = Math.min(idleNeed, FAST.idleMs); stableNeed = Math.min(stableNeed, FAST.stableMs); }
+    }
+    // A tab in the background renders the site only now and then, so "no change for a while" proves little there.
+    // A complete command stays fast; everything else waits much longer while the tab is hidden.
+    const complete = idleNeed === FAST.idleMs && stableNeed === FAST.stableMs;
+    if (document.visibilityState === "hidden" && !complete) { idleNeed = Math.max(idleNeed, HIDDEN.idleMs); stableNeed = Math.max(stableNeed, HIDDEN.stableMs); }
+    if (!complete && S.hiddenAt && now() - S.hiddenAt < 8000) return;        // just came back to the tab: let the page catch up first
+    if (now() - S.genAt < idleNeed || now() - S.textAt < stableNeed) return;
     await handle(turns, turns.length - 1);
   }
 
@@ -711,7 +784,7 @@
 
   // ── mini chat (the little always-on-top window of the desktop app) ──────
   const stripBlocks = (t) => String(t || "")
-    .replace(/^\s*\[LuaPilot\]\s*/, "")
+    .replace(/^\s*\[Luau?Pilot\]\s*/, "")
     .replace(/```[a-z]*\s*@@LPCALL@@[\s\S]*?@@LPEND@@\s*```/gi, "[command]")
     .replace(/```[a-z]*\s*@@LPLUA[\s\S]*?@@LPEND@@\s*```/gi, "[Luau code]")
     .replace(/@@LPCALL@@[\s\S]*?@@LPEND@@/g, "[command]")
@@ -756,5 +829,5 @@
     await resumeLadder();
   }
 
-  LP.agent = { stop: () => chatStop(), init, poke: () => tick(), diag, chatSend, chatStop, keyOf, setEnabled, startSession, retry, state: S, isEnabled: () => S.enabled, resume: () => { S.halt = ""; S.paused = false; UI().status("idle"); } };
+  LP.agent = { stop: () => chatStop(), init, poke: () => tick(), diag, chatSend, chatStop, keyOf, setEnabled, startSession, retry, state: S, isEnabled: () => S.enabled, isActive: () => !!(S.enabled && S.active), resume: () => { S.halt = ""; S.paused = false; UI().status("idle"); } };
 })();

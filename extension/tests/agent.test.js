@@ -53,10 +53,10 @@ w.eval(`
   check("no duplicate afterwards", sentToBridge.length === 1 && w.__sent.length === 1);
   check("chip hides code", w.document.querySelectorAll("[data-chip]").length >= 3 && [...w.document.querySelectorAll("pre:not(.lp-chip-b)")].every((p) => p.classList.contains("lp-hide")));
   check("injected user turns are hidden", [...w.document.querySelectorAll('.t[data-role="user"]')].every((d) => d.classList.contains("lp-hide")));
-  w.eval(`add("assistant", '<p>[LuaPilot]</p><p>Tagged.</p>')`);
+  w.eval(`add("assistant", '<p>[LuauPilot]</p><p>Tagged.</p>')`);
   await sleep(1200);
   { const tt = [...w.document.querySelectorAll(".t")].find((d) => /Tagged/.test(d.textContent)); const ps2 = [...tt.querySelectorAll("p")];
-    check("[LuaPilot] tag hidden, text kept", ps2[0].classList.contains("lp-hide") && !ps2[1].classList.contains("lp-hide")); }
+    check("[LuauPilot] tag hidden, text kept", ps2[0].classList.contains("lp-hide") && !ps2[1].classList.contains("lp-hide")); }
   w.eval(`add("assistant", '<p>All done.</p><p>&lt;｜｜DSML｜｜ invoke name="x"&gt;</p>')`);
   await sleep(1200);
   const ps = [...[...w.document.querySelectorAll(".t")].find((d) => /All done/.test(d.textContent)).querySelectorAll("p")];

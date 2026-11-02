@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: MIT
-"""Keeps LuaPilot's files on disk from piling up: anything older than 4 days, counted from the NEWEST entry
+"""Keeps LuauPilot's files on disk from piling up: anything older than 4 days, counted from the NEWEST entry
 (not from today), is deleted. So a computer that was off for a week keeps its last four days of data.
 
     prune_log(path)  - log files whose lines start with "YYYY-MM-DD HH:MM:SS"
@@ -85,7 +85,7 @@ def prune_dir(path, days=DAYS, keep_names=()):
 
 
 def run(log_dir, models_dir):
-    """Everything LuaPilot writes by itself. The user's Guide folder is never touched."""
+    """Everything LuauPilot writes by itself. The user's Guide folder is never touched."""
     n = 0
     try:
         for name in os.listdir(log_dir):

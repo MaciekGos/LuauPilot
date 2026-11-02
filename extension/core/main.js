@@ -1,4 +1,4 @@
-// LuaPilot - entry point of the chat-page content script.
+// LuauPilot - entry point of the chat-page content script.
 (async () => {
   "use strict";
   const LP = window.LP;
@@ -9,6 +9,10 @@
     LP.ui.init();
     LP.link.onState((s) => LP.ui.setBridge(s));
     LP.link.onPulse(() => LP.agent.poke());
+    if (LP.link.feedback) {
+      LP.link.feedback.onChange((m) => LP.ui.feedbackState(m));
+      LP.link.feedback.get().then((m) => LP.ui.feedbackState(m)).catch(() => {});
+    }
     LP.link.status().then((s) => { if (s && s.t === "state") LP.ui.setBridge(s); });
     try {
       chrome.storage.onChanged.addListener((ch) => {

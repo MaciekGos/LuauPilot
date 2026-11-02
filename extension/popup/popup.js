@@ -6,10 +6,10 @@ let s = { power: true, link: true, connected: false, mcp: false, studio: {}, por
 function paint() {
   const live = s.power && s.link && s.connected;
   app.dataset.state = !s.power ? "off" : live ? "live" : "wait";
-  $("headline").textContent = !s.power ? "LuaPilot is off" : !s.link ? "Disconnected" : s.connected ? "Connected" : "Looking for the bridge...";
+  $("headline").textContent = !s.power ? "LuauPilot is off" : !s.link ? "Disconnected" : s.connected ? "Connected" : "Looking for the bridge...";
   $("sub").textContent = !s.power ? "The AI chat is left untouched"
     : !s.link ? "Press Connect to use the bridge again"
-    : !s.connected ? "Start the LuaPilot app on your computer"
+    : !s.connected ? "Start the LuauPilot app on your computer"
     : s.studio && s.studio.place ? "Ready to work in Roblox Studio" : "Open a place in Roblox Studio";
   $("power").setAttribute("aria-checked", String(s.power));
   $("link").replaceChildren(LP.icon(s.link ? "plugs" : "plugs-connected", 14), " ", s.link ? "Disconnect" : "Connect");

@@ -1,4 +1,4 @@
-// LuaPilot - finds command blocks in a model reply.
+// LuauPilot - finds command blocks in a model reply.
 // analyze(text, known) -> { kind: "none" | "call" | "many" | "error", calls, reason, name }
 (() => {
   "use strict";
@@ -136,7 +136,7 @@
     return { kind: "call", calls, name: calls[0].name };
   }
 
-  // Is this turn text something LuaPilot itself injected?
+  // Is this turn text something LuauPilot itself injected?
   function isInjected(text) {
     const t = String(text || "").trimStart();
     return t.startsWith(MARK.msg) || t.startsWith(MARK.sys) || t.startsWith(MARK.resend);

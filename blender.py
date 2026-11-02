@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: MIT
-"""Optional Blender connection for LuaPilot (per session, off by default).
+"""Optional Blender connection for LuauPilot (per session, off by default).
 
 Blender is reached the same way as Roblox Studio: the bridge starts an MCP server over stdio.
 The server is the community project "mcp-for-blender" (run with uvx); it talks to an add-on
