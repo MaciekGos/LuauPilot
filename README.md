@@ -44,7 +44,7 @@ LuauPilot is still in alpha, so more improvements and fixes are coming.
 ## Generated with LuauPilot
 
 <p align="center">
-  <img src="assets/img1.jpg" alt="Generated with LuauPilot" width="800">
+  <img src="ezgif-7ad283b5101f537d.gif" alt="Generated with LuauPilot" width="800">
 </p>
 
 ## Install (Windows)
