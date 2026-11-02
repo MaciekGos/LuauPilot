@@ -5,6 +5,21 @@
 ![Platform](https://img.shields.io/badge/platform-Windows-blue)
 ![License](https://img.shields.io/badge/license-MIT-blue)
 
+## ⚠️ Official Downloads & Security
+
+The only official LuauPilot repository is:
+
+https://github.com/MaciekGos/LuauPilot
+
+LuauPilot is free. We do not distribute paid
+versions or unofficial installers.
+
+Downloads from third-party websites and
+modified forks are not verified or supported.
+
+Be careful with websites claiming to offer
+LuauPilot downloads.
+
 > [!NOTE]
 > **The project has been renamed to LuauPilot.**
 >
