@@ -1,6 +1,6 @@
 <p align="center"><img src="assets/logo-wide-dark.png" alt="LuauPilot" width="320"></p>
 
-# LuauPilot
+# LuauPilot development suspended
 
 ![Platform](https://img.shields.io/badge/platform-Windows-blue)
 ![License](https://img.shields.io/badge/license-MIT-blue)
