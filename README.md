@@ -13,6 +13,8 @@
 > I may still manage to publish a 0.04 update with a fix in the meantime, but **I can't promise anything**.
 >
 > There is currently no estimated date for when development will resume.
+>
+> **Forks are still welcome!** You're free to fork the repository, modify the project and publish your own versions under the MIT License. Just make sure to follow the license terms.
 
 
 
