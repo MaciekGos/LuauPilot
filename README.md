@@ -5,6 +5,18 @@
 ![Platform](https://img.shields.io/badge/platform-Windows-blue)
 ![License](https://img.shields.io/badge/license-MIT-blue)
 
+> [!WARNING]
+> **LuauPilot development is suspended until further notice.**
+>
+> I'm taking a break from LuauPilot to focus on another project: **Jellyfish Parental Controls**.
+>
+> I may still manage to publish a 0.04 update with a fix in the meantime, but **I can't promise anything**.
+>
+> There is currently no estimated date for when development will resume.
+
+
+
+
 ## ⚠️ Official Downloads & Security
 
 The only official LuauPilot repository is:
