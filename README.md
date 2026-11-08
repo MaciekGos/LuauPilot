@@ -1,23 +1,19 @@
-<p align="center"><img src="assets/logo-wide-dark.png" alt="LuauPilot" width="320"></p>
+ <p align="center"><img src="assets/logo-wide-dark.png" alt="LuauPilot" width="320"></p>
 
-# LuauPilot development suspended
+# LuauPilot has been discontinued
 
 ![Platform](https://img.shields.io/badge/platform-Windows-blue)
 ![License](https://img.shields.io/badge/license-MIT-blue)
+![Status](https://img.shields.io/badge/status-discontinued-red)
 
-> [!WARNING]
-> **LuauPilot development is suspended until further notice.**
+> [!CAUTION]
+> **LuauPilot has been permanently discontinued.**
 >
-> I'm taking a break from LuauPilot to focus on another project: **Jellyfish Parental Controls**.
+> Development of this project has ended. There are no plans for future updates, bug fixes, or official support.
 >
-> I may still manage to publish a 0.04 update with a fix in the meantime, but **I can't promise anything**.
+> The repository will remain publicly available, and existing releases can still be downloaded.
 >
-> There is currently no estimated date for when development will resume.
->
-> **Forks are still welcome!** You're free to fork the repository, modify the project and publish your own versions under the MIT License. Just make sure to follow the license terms.
-
-
-
+> **Forks are welcome!** You're free to fork the repository, modify the project and publish your own versions under the MIT License. Just make sure to follow the license terms.
 
 ## ⚠️ Official Downloads & Security
 
@@ -25,23 +21,18 @@ The only official LuauPilot repository is:
 
 https://github.com/MaciekGos/LuauPilot
 
-LuauPilot is free. We do not distribute paid
-versions or unofficial installers.
+LuauPilot is free. We do not distribute paid versions or unofficial installers.
 
-Downloads from third-party websites and
-modified forks are not verified or supported.
+Downloads from third-party websites and modified forks are not verified or supported.
 
-Be careful with websites claiming to offer
-LuauPilot downloads.
+Be careful with websites claiming to offer LuauPilot downloads.
 
 > [!NOTE]
 > **The project has been renamed to LuauPilot.**
 >
 > The name was changed because **LuaPilot.com already exists and provides a very similar product**.
 >
-> The rebranding is now in progress. Until a new release is published, some versions available in the **Releases** section may still use the old **LuaPilot** name. Older releases may also continue to use the old name, application branding, and paths.
->
-> **The project itself is not discontinued.**
+> Some older releases may still use the old **LuaPilot** name, application branding, and paths.
 
 LuauPilot lets a DeepSeek chat work inside your **Roblox Studio**. A browser extension reads the AI's commands, a small local bridge passes them to Roblox Studio's MCP server, and the results go back into the chat — so the AI can keep working on its own.
 
@@ -53,7 +44,7 @@ LuauPilot lets a DeepSeek chat work inside your **Roblox Studio**. A browser ext
 - **General improvements** — improved stability, performance and overall reliability.
 - **Various fixes** — cleaned up several smaller issues across the extension.
 
-LuauPilot is still in alpha, so more improvements and fixes are coming.
+<text>LuauPilot was released as an alpha project and is no longer actively maintained.</text>
 
 ## Generated with LuauPilot
 
@@ -67,13 +58,13 @@ LuauPilot is still in alpha, so more improvements and fixes are coming.
 2. Open **LuauPilot**. Press **Extension** — the extension folder path is copied to your clipboard.
 3. In Chrome/Edge open `chrome://extensions`, enable *Developer mode*, click *Load unpacked*, paste the path (Ctrl+V) and confirm.
 4. Open Roblox Studio with a place and enable its MCP server (Assistant settings).
-5. Open <https://chat.deepseek.com/>, press **Start LuauPilot here** (optionally type your task first).
+5. Open https://chat.deepseek.com/, press **Start LuauPilot here** (optionally type your task first).
 
 In the app's **Settings** you can make it open DeepSeek and Roblox Studio automatically when it starts.
 
 ## Mini chat
 
-> **Experimental feature:** Mini chat is currently in testing and is not recommended for regular use. It may be unstable or behave unexpectedly.
+> **Experimental feature:** Mini chat was in testing and was not recommended for regular use. It may be unstable or behave unexpectedly.
 
 Press **Mini chat** in the app: a small always-on-top box (Send, Stop, expandable answer) that talks to the DeepSeek tab through the extension, so you can keep Roblox Studio in front. It needs the DeepSeek page open in the browser (it can sit in the background or a minimised window): the AI lives on that page. If it is not open, the box offers **Open DeepSeek** and sends your message as soon as the page is connected.
 
@@ -85,7 +76,7 @@ When you press **Start LuauPilot here** in a fresh chat you are asked two things
 
 ## Blender (optional, per session)
 
-> **Experimental feature:** Blender integration is currently in testing and is not recommended for regular use. It may be unstable or behave unexpectedly.
+> **Experimental feature:** Blender integration was in testing and was not recommended for regular use. It may be unstable or behave unexpectedly.
 
 Pick **Use Blender** at the start. The bridge then starts the community `mcp-for-blender` server (via `uvx`, telemetry off) next to the Studio one; its tools appear as `blender_...`. It needs [uv](https://docs.astral.sh/uv/), Blender, and the add-on (`uvx mcp-for-blender install-addon`, then enable "MCP for Blender" and start its server in the N panel, port 9876). If something is missing the page shows the exact steps. Models are exported from Blender and imported into Studio by you once (MCP cannot upload meshes); then the AI continues in Studio.
 
